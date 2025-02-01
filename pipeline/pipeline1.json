@@ -19,7 +19,9 @@
 						"type": "DelimitedTextSource",
 						"storeSettings": {
 							"type": "AzureBlobFSReadSettings",
-							"fileListPath": "myproject/bronze/sales",
+							"recursive": true,
+							"wildcardFolderPath": "bronze/sales",
+							"wildcardFileName": "sales*",
 							"enablePartitionDiscovery": false
 						},
 						"formatSettings": {
@@ -54,7 +56,7 @@
 						"parameters": {
 							"ContainerName": "myproject",
 							"FolderName": "bronze/sales",
-							"FileName": "/"
+							"FileName": "Sales"
 						}
 					}
 				],
@@ -65,7 +67,7 @@
 						"parameters": {
 							"ContainerName": "myproject",
 							"FolderName": "bronze",
-							"FileName": "mergedSales"
+							"FileName": "mergedSales.csv"
 						}
 					}
 				]
