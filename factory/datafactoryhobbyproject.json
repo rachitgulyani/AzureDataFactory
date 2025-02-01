@@ -1,5 +1,10 @@
 {
 	"name": "datafactoryhobbyproject",
+	"properties": {
+		"globalConfigurations": {
+			"PipelineBillingEnabled": "true"
+		}
+	},
 	"location": "eastus",
 	"identity": {
 		"type": "SystemAssigned",
