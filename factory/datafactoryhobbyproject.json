@@ -1,0 +1,9 @@
+{
+	"name": "datafactoryhobbyproject",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "af8809e9-4f8c-4283-adf0-bb6560529bec",
+		"tenantId": "9958db81-6cef-48c5-b994-0f6bbc11e783"
+	}
+}
