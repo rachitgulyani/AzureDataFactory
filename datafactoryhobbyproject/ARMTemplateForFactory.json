@@ -22,10 +22,6 @@
 		"FileCreationTrigger_properties_typeProperties_scope": {
 			"type": "string",
 			"defaultValue": "/subscriptions/64885e05-1c68-4073-9065-a3dedd19eb57/resourceGroups/my-resource-group/providers/Microsoft.Storage/storageAccounts/mystorageaccountrachit"
-		},
-		"newTrigger_properties_typeProperties_scope": {
-			"type": "string",
-			"defaultValue": "/subscriptions/64885e05-1c68-4073-9065-a3dedd19eb57/resourceGroups/my-resource-group/providers/Microsoft.Storage/storageAccounts/mystorageaccountrachit"
 		}
 	},
 	"variables": {
@@ -1519,37 +1515,6 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/FileCreationTrigger')]",
-			"type": "Microsoft.DataFactory/factories/triggers",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"runtimeState": "Stopped",
-				"pipelines": [
-					{
-						"pipelineReference": {
-							"referenceName": "VarPipeline",
-							"type": "PipelineReference"
-						},
-						"parameters": {}
-					}
-				],
-				"type": "BlobEventsTrigger",
-				"typeProperties": {
-					"blobPathBeginsWith": "/destination/blobs/data-factory-course/FactSales1.csv",
-					"ignoreEmptyBlobs": true,
-					"scope": "[parameters('FileCreationTrigger_properties_typeProperties_scope')]",
-					"events": [
-						"Microsoft.Storage.BlobDeleted",
-						"Microsoft.Storage.BlobCreated"
-					]
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/pipelines/VarPipeline')]"
-			]
-		},
-		{
 			"name": "[concat(parameters('factoryName'), '/DataFlow')]",
 			"type": "Microsoft.DataFactory/factories/dataflows",
 			"apiVersion": "2018-06-01",
@@ -1679,13 +1644,20 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/newTrigger')]",
+			"name": "[concat(parameters('factoryName'), '/FileCreationTrigger')]",
 			"type": "Microsoft.DataFactory/factories/triggers",
 			"apiVersion": "2018-06-01",
 			"properties": {
 				"annotations": [],
-				"runtimeState": "Stopped",
+				"runtimeState": "Started",
 				"pipelines": [
+					{
+						"pipelineReference": {
+							"referenceName": "VarPipeline",
+							"type": "PipelineReference"
+						},
+						"parameters": {}
+					},
 					{
 						"pipelineReference": {
 							"referenceName": "EventBasedPipe",
@@ -1698,14 +1670,15 @@
 				"typeProperties": {
 					"blobPathBeginsWith": "/destination/blobs/data-factory-course/FactSales1.csv",
 					"ignoreEmptyBlobs": true,
-					"scope": "[parameters('newTrigger_properties_typeProperties_scope')]",
+					"scope": "[parameters('FileCreationTrigger_properties_typeProperties_scope')]",
 					"events": [
-						"Microsoft.Storage.BlobCreated",
-						"Microsoft.Storage.BlobDeleted"
+						"Microsoft.Storage.BlobDeleted",
+						"Microsoft.Storage.BlobCreated"
 					]
 				}
 			},
 			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/VarPipeline')]",
 				"[concat(variables('factoryId'), '/pipelines/EventBasedPipe')]"
 			]
 		}
