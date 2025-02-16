@@ -66,7 +66,7 @@
 								},
 								"ifTrueActivities": [
 									{
-										"name": "CopyFactFiles",
+										"name": "FactFileExists",
 										"type": "Copy",
 										"dependsOn": [],
 										"policy": {
@@ -117,7 +117,7 @@
 													"ContainerName": "destination",
 													"FolderName": "data-factory-course",
 													"FileName": {
-														"value": "@activity('GetFileNames').output.childItems[0].name",
+														"value": "@item().name",
 														"type": "Expression"
 													}
 												}
