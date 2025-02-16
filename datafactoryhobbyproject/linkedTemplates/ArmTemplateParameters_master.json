@@ -14,6 +14,9 @@
 		"HttpServer_Github_Linked_properties_typeProperties_url": {
 			"value": "@{linkedService().BaseURL}"
 		},
+		"FileCreationTrigger_properties_typeProperties_scope": {
+			"value": "/subscriptions/64885e05-1c68-4073-9065-a3dedd19eb57/resourceGroups/my-resource-group/providers/Microsoft.Storage/storageAccounts/mystorageaccountrachit"
+		},
 		"containerUri": {
 			"value": ""
 		},
