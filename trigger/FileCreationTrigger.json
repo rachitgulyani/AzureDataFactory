@@ -2,11 +2,17 @@
 	"name": "FileCreationTrigger",
 	"properties": {
 		"annotations": [],
-		"runtimeState": "Stopped",
+		"runtimeState": "Started",
 		"pipelines": [
 			{
 				"pipelineReference": {
 					"referenceName": "VarPipeline",
+					"type": "PipelineReference"
+				}
+			},
+			{
+				"pipelineReference": {
+					"referenceName": "EventBasedPipe",
 					"type": "PipelineReference"
 				}
 			}
