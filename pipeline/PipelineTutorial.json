@@ -128,9 +128,12 @@
 												"referenceName": "PARQUET_DATALAKE_DS",
 												"type": "DatasetReference",
 												"parameters": {
-													"ContainerName": "container",
+													"ContainerName": "destination",
 													"FolderName": "data-factory-course/silver",
-													"FileName": "/"
+													"FileName": {
+														"value": "@replace(item().name,'.csv' ,'.parquet')",
+														"type": "Expression"
+													}
 												}
 											}
 										]
