@@ -1,0 +1,25 @@
+{
+	"name": "newTrigger",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "EventBasedPipe",
+					"type": "PipelineReference"
+				}
+			}
+		],
+		"type": "BlobEventsTrigger",
+		"typeProperties": {
+			"blobPathBeginsWith": "/destination/blobs/data-factory-course/FactSales1.csv",
+			"ignoreEmptyBlobs": true,
+			"scope": "/subscriptions/64885e05-1c68-4073-9065-a3dedd19eb57/resourceGroups/my-resource-group/providers/Microsoft.Storage/storageAccounts/mystorageaccountrachit",
+			"events": [
+				"Microsoft.Storage.BlobCreated",
+				"Microsoft.Storage.BlobDeleted"
+			]
+		}
+	}
+}
