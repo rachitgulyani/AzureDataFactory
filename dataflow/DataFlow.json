@@ -1,0 +1,125 @@
+{
+	"name": "DataFlow",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "csv_ds",
+						"type": "DatasetReference"
+					},
+					"name": "SourceCSV"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "csv_ds",
+						"type": "DatasetReference"
+					},
+					"name": "AggOutput"
+				},
+				{
+					"dataset": {
+						"referenceName": "csv_ds",
+						"type": "DatasetReference"
+					},
+					"name": "VisaOutput"
+				},
+				{
+					"dataset": {
+						"referenceName": "csv_ds",
+						"type": "DatasetReference"
+					},
+					"name": "AmericanOutput"
+				},
+				{
+					"dataset": {
+						"referenceName": "csv_ds",
+						"type": "DatasetReference"
+					},
+					"name": "MastercardOutput"
+				}
+			],
+			"transformations": [
+				{
+					"name": "select1"
+				},
+				{
+					"name": "filterDate"
+				},
+				{
+					"name": "split1"
+				},
+				{
+					"name": "Aggregate"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          transaction_id as short,",
+				"          transactional_date as timestamp,",
+				"          product_id as string,",
+				"          customer_id as short,",
+				"          payment as string,",
+				"          credit_card as long,",
+				"          loyalty_card as boolean,",
+				"          cost as double,",
+				"          quantity as short,",
+				"          price as double",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> SourceCSV",
+				"SourceCSV select(mapColumn(",
+				"          transaction_id,",
+				"          transactional_date,",
+				"          product_id,",
+				"          customer_id,",
+				"          payment,",
+				"          price",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"select1 filter(dayOfMonth(transactional_date)==4 && month(transactional_date)==5) ~> filterDate",
+				"filterDate split(payment=='visa',",
+				"     payment=='americanexpress',",
+				"     disjoint: false) ~> split1@(Visa, AmericanExpress, Mastercard)",
+				"split1@Visa aggregate(groupBy(payment,",
+				"          customer_id),",
+				"     MaxPrice = max(price)) ~> Aggregate",
+				"Aggregate sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     partitionFileNames:[''],",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     partitionBy('hash', 1)) ~> AggOutput",
+				"split1@Visa sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> VisaOutput",
+				"split1@AmericanExpress sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> AmericanOutput",
+				"split1@Mastercard sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> MastercardOutput"
+			]
+		}
+	}
+}
