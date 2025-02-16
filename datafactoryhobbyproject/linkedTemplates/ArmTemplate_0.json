@@ -107,6 +107,93 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/PARQUET_DATALAKE_DS')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "DataLake_linked",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"ContainerName": {
+						"type": "string"
+					},
+					"FolderName": {
+						"type": "string"
+					},
+					"FileName": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().FileName",
+							"type": "Expression"
+						},
+						"folderPath": {
+							"value": "@dataset().FolderName",
+							"type": "Expression"
+						},
+						"fileSystem": {
+							"value": "@dataset().ContainerName",
+							"type": "Expression"
+						}
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/DataLake_linked')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PARQUET_HTTP_DS')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "HttpServer_Github_Linked",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"BaseURL": {
+							"value": "@dataset().BaseURL",
+							"type": "Expression"
+						}
+					}
+				},
+				"parameters": {
+					"BaseURL": {
+						"type": "string"
+					},
+					"RelativeURL": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "HttpServerLocation",
+						"relativeUrl": {
+							"value": "@dataset().RelativeURL",
+							"type": "Expression"
+						}
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/HttpServer_Github_Linked')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/csv_ds')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -197,6 +284,266 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/HttpServer_Github_Linked')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/CI-CD-Pipe-AzureDevOps')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "MergeSalesData",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"wildcardFolderPath": "bronze/sales",
+									"wildcardFileName": "sales*",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".txt"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "csv_ds",
+								"type": "DatasetReference",
+								"parameters": {
+									"ContainerName": "myproject",
+									"FolderName": "bronze/sales",
+									"FileName": "Sales"
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "csv_ds",
+								"type": "DatasetReference",
+								"parameters": {
+									"ContainerName": "myproject",
+									"FolderName": "bronze",
+									"FileName": "mergedSales.csv"
+								}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2025-02-01T20:12:10Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/csv_ds')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/CI-CD-Pipe-Github')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "MergeSalesData",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"wildcardFolderPath": "bronze/sales",
+									"wildcardFileName": "sales*",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".txt"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "csv_ds",
+								"type": "DatasetReference",
+								"parameters": {
+									"ContainerName": "myproject",
+									"FolderName": "bronze/sales",
+									"FileName": "Sales"
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "csv_ds",
+								"type": "DatasetReference",
+								"parameters": {
+									"ContainerName": "myproject",
+									"FolderName": "bronze",
+									"FileName": "mergedSales.csv"
+								}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2025-02-01T20:12:10Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/csv_ds')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/CI-CD-Pipe')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "MergeSalesData",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"wildcardFolderPath": "bronze/sales",
+									"wildcardFileName": "sales*",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".txt"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "csv_ds",
+								"type": "DatasetReference",
+								"parameters": {
+									"ContainerName": "myproject",
+									"FolderName": "bronze/sales",
+									"FileName": "Sales"
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "csv_ds",
+								"type": "DatasetReference",
+								"parameters": {
+									"ContainerName": "myproject",
+									"FolderName": "bronze",
+									"FileName": "mergedSales.csv"
+								}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/csv_ds')]"
 			]
 		},
 		{
@@ -380,89 +727,186 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/CI-CD-Pipe')]",
+			"name": "[concat(parameters('factoryName'), '/nyc-taxi-pipe')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
 			"properties": {
 				"activities": [
 					{
-						"name": "MergeSalesData",
-						"type": "Copy",
+						"name": "ForEachMonth",
+						"type": "ForEach",
 						"dependsOn": [],
-						"policy": {
-							"timeout": "0.12:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
 						"userProperties": [],
 						"typeProperties": {
-							"source": {
-								"type": "DelimitedTextSource",
-								"storeSettings": {
-									"type": "AzureBlobFSReadSettings",
-									"recursive": true,
-									"wildcardFolderPath": "bronze/sales",
-									"wildcardFileName": "sales*",
-									"enablePartitionDiscovery": false
-								},
-								"formatSettings": {
-									"type": "DelimitedTextReadSettings"
-								}
+							"items": {
+								"value": "@range(1,12)",
+								"type": "Expression"
 							},
-							"sink": {
-								"type": "DelimitedTextSink",
-								"storeSettings": {
-									"type": "AzureBlobFSWriteSettings"
-								},
-								"formatSettings": {
-									"type": "DelimitedTextWriteSettings",
-									"quoteAllText": true,
-									"fileExtension": ".txt"
+							"isSequential": true,
+							"activities": [
+								{
+									"name": "CheckForMonthValue",
+									"type": "IfCondition",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"expression": {
+											"value": "@greaterOrEquals(item(),10)",
+											"type": "Expression"
+										},
+										"ifFalseActivities": [
+											{
+												"name": "CopyTaxiFilesLessThan10",
+												"type": "Copy",
+												"dependsOn": [],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"source": {
+														"type": "ParquetSource",
+														"storeSettings": {
+															"type": "HttpReadSettings",
+															"requestMethod": "GET"
+														},
+														"formatSettings": {
+															"type": "ParquetReadSettings"
+														}
+													},
+													"sink": {
+														"type": "ParquetSink",
+														"storeSettings": {
+															"type": "AzureBlobFSWriteSettings"
+														},
+														"formatSettings": {
+															"type": "ParquetWriteSettings"
+														}
+													},
+													"enableStaging": false,
+													"translator": {
+														"type": "TabularTranslator",
+														"typeConversion": true,
+														"typeConversionSettings": {
+															"allowDataTruncation": true,
+															"treatBooleanAsNumber": false
+														}
+													}
+												},
+												"inputs": [
+													{
+														"referenceName": "PARQUET_HTTP_DS",
+														"type": "DatasetReference",
+														"parameters": {
+															"BaseURL": "https://d37ci6vzurychx.cloudfront.net/",
+															"RelativeURL": {
+																"value": "@concat('trip-data/green_tripdata_2023-0',item(),'.parquet')",
+																"type": "Expression"
+															}
+														}
+													}
+												],
+												"outputs": [
+													{
+														"referenceName": "PARQUET_DATALAKE_DS",
+														"type": "DatasetReference",
+														"parameters": {
+															"ContainerName": "nyc-taxi-project",
+															"FolderName": "bronze/trip2023data",
+															"FileName": " "
+														}
+													}
+												]
+											}
+										],
+										"ifTrueActivities": [
+											{
+												"name": "CopyTaxiFiles",
+												"type": "Copy",
+												"dependsOn": [],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"source": {
+														"type": "ParquetSource",
+														"storeSettings": {
+															"type": "HttpReadSettings",
+															"requestMethod": "GET"
+														},
+														"formatSettings": {
+															"type": "ParquetReadSettings"
+														}
+													},
+													"sink": {
+														"type": "ParquetSink",
+														"storeSettings": {
+															"type": "AzureBlobFSWriteSettings"
+														},
+														"formatSettings": {
+															"type": "ParquetWriteSettings"
+														}
+													},
+													"enableStaging": false,
+													"translator": {
+														"type": "TabularTranslator",
+														"typeConversion": true,
+														"typeConversionSettings": {
+															"allowDataTruncation": true,
+															"treatBooleanAsNumber": false
+														}
+													}
+												},
+												"inputs": [
+													{
+														"referenceName": "PARQUET_HTTP_DS",
+														"type": "DatasetReference",
+														"parameters": {
+															"BaseURL": "https://d37ci6vzurychx.cloudfront.net/",
+															"RelativeURL": {
+																"value": "@concat('trip-data/green_tripdata_2023-',item(),'.parquet')",
+																"type": "Expression"
+															}
+														}
+													}
+												],
+												"outputs": [
+													{
+														"referenceName": "PARQUET_DATALAKE_DS",
+														"type": "DatasetReference",
+														"parameters": {
+															"ContainerName": "nyc-taxi-project",
+															"FolderName": "bronze/trip2023data",
+															"FileName": " "
+														}
+													}
+												]
+											}
+										]
+									}
 								}
-							},
-							"enableStaging": false,
-							"translator": {
-								"type": "TabularTranslator",
-								"typeConversion": true,
-								"typeConversionSettings": {
-									"allowDataTruncation": true,
-									"treatBooleanAsNumber": false
-								}
-							}
-						},
-						"inputs": [
-							{
-								"referenceName": "csv_ds",
-								"type": "DatasetReference",
-								"parameters": {
-									"ContainerName": "myproject",
-									"FolderName": "bronze/sales",
-									"FileName": "Sales"
-								}
-							}
-						],
-						"outputs": [
-							{
-								"referenceName": "csv_ds",
-								"type": "DatasetReference",
-								"parameters": {
-									"ContainerName": "myproject",
-									"FolderName": "bronze",
-									"FileName": "mergedSales.csv"
-								}
-							}
-						]
+							]
+						}
 					}
 				],
 				"policy": {
 					"elapsedTimeMetric": {}
 				},
-				"annotations": []
+				"annotations": [],
+				"lastPublishTime": "2025-02-02T20:30:28Z"
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/csv_ds')]"
+				"[concat(variables('factoryId'), '/datasets/PARQUET_HTTP_DS')]",
+				"[concat(variables('factoryId'), '/datasets/PARQUET_DATALAKE_DS')]"
 			]
 		}
 	]
