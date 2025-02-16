@@ -39,8 +39,6 @@
 			{
 				"name": "ForEachFile",
 				"type": "ForEach",
-				"state": "Inactive",
-				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
 						"activity": "GetFileNames",
@@ -63,12 +61,12 @@
 							"userProperties": [],
 							"typeProperties": {
 								"expression": {
-									"value": "@contains({item().value},'Fact')",
+									"value": "@contains(item().name,'Fact')",
 									"type": "Expression"
 								},
 								"ifTrueActivities": [
 									{
-										"name": "Copy data1",
+										"name": "CopyFactFiles",
 										"type": "Copy",
 										"dependsOn": [],
 										"policy": {
@@ -80,8 +78,62 @@
 										},
 										"userProperties": [],
 										"typeProperties": {
-											"enableStaging": false
-										}
+											"source": {
+												"type": "DelimitedTextSource",
+												"storeSettings": {
+													"type": "AzureBlobFSReadSettings",
+													"recursive": false,
+													"enablePartitionDiscovery": false
+												},
+												"formatSettings": {
+													"type": "DelimitedTextReadSettings"
+												}
+											},
+											"sink": {
+												"type": "ParquetSink",
+												"storeSettings": {
+													"type": "AzureBlobFSWriteSettings",
+													"copyBehavior": "PreserveHierarchy"
+												},
+												"formatSettings": {
+													"type": "ParquetWriteSettings"
+												}
+											},
+											"enableStaging": false,
+											"translator": {
+												"type": "TabularTranslator",
+												"typeConversion": true,
+												"typeConversionSettings": {
+													"allowDataTruncation": false,
+													"treatBooleanAsNumber": false
+												}
+											}
+										},
+										"inputs": [
+											{
+												"referenceName": "csv_ds",
+												"type": "DatasetReference",
+												"parameters": {
+													"ContainerName": "destination",
+													"FolderName": "data-factory-course",
+													"FileName": {
+														"value": "@activity('GetFileNames').output.childItems[0].name",
+														"type": "Expression"
+													}
+												}
+											}
+										],
+										"outputs": [
+											{
+												"referenceName": "PARQUET_DATALAKE_DS",
+												"type": "DatasetReference",
+												"parameters": {
+													"ContainerName": "container",
+													"FolderName": "data-factory-course/silver",
+													"FileName": "/"
+												}
+											}
+										]
 									}
 								]
 							}
