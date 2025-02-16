@@ -1,0 +1,175 @@
+{
+	"name": "nyc-taxi-pipe",
+	"properties": {
+		"activities": [
+			{
+				"name": "ForEachMonth",
+				"type": "ForEach",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@range(1,12)",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "CheckForMonthValue",
+							"type": "IfCondition",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@greaterOrEquals(item(),10)",
+									"type": "Expression"
+								},
+								"ifFalseActivities": [
+									{
+										"name": "CopyTaxiFilesLessThan10",
+										"type": "Copy",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "ParquetSource",
+												"storeSettings": {
+													"type": "HttpReadSettings",
+													"requestMethod": "GET"
+												},
+												"formatSettings": {
+													"type": "ParquetReadSettings"
+												}
+											},
+											"sink": {
+												"type": "ParquetSink",
+												"storeSettings": {
+													"type": "AzureBlobFSWriteSettings"
+												},
+												"formatSettings": {
+													"type": "ParquetWriteSettings"
+												}
+											},
+											"enableStaging": false,
+											"translator": {
+												"type": "TabularTranslator",
+												"typeConversion": true,
+												"typeConversionSettings": {
+													"allowDataTruncation": true,
+													"treatBooleanAsNumber": false
+												}
+											}
+										},
+										"inputs": [
+											{
+												"referenceName": "PARQUET_HTTP_DS",
+												"type": "DatasetReference",
+												"parameters": {
+													"BaseURL": "https://d37ci6vzurychx.cloudfront.net/",
+													"RelativeURL": {
+														"value": "@concat('trip-data/green_tripdata_2023-0',item(),'.parquet')",
+														"type": "Expression"
+													}
+												}
+											}
+										],
+										"outputs": [
+											{
+												"referenceName": "PARQUET_DATALAKE_DS",
+												"type": "DatasetReference",
+												"parameters": {
+													"ContainerName": "nyc-taxi-project",
+													"FolderName": "bronze/trip2023data",
+													"FileName": " "
+												}
+											}
+										]
+									}
+								],
+								"ifTrueActivities": [
+									{
+										"name": "CopyTaxiFiles",
+										"type": "Copy",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "ParquetSource",
+												"storeSettings": {
+													"type": "HttpReadSettings",
+													"requestMethod": "GET"
+												},
+												"formatSettings": {
+													"type": "ParquetReadSettings"
+												}
+											},
+											"sink": {
+												"type": "ParquetSink",
+												"storeSettings": {
+													"type": "AzureBlobFSWriteSettings"
+												},
+												"formatSettings": {
+													"type": "ParquetWriteSettings"
+												}
+											},
+											"enableStaging": false,
+											"translator": {
+												"type": "TabularTranslator",
+												"typeConversion": true,
+												"typeConversionSettings": {
+													"allowDataTruncation": true,
+													"treatBooleanAsNumber": false
+												}
+											}
+										},
+										"inputs": [
+											{
+												"referenceName": "PARQUET_HTTP_DS",
+												"type": "DatasetReference",
+												"parameters": {
+													"BaseURL": "https://d37ci6vzurychx.cloudfront.net/",
+													"RelativeURL": {
+														"value": "@concat('trip-data/green_tripdata_2023-',item(),'.parquet')",
+														"type": "Expression"
+													}
+												}
+											}
+										],
+										"outputs": [
+											{
+												"referenceName": "PARQUET_DATALAKE_DS",
+												"type": "DatasetReference",
+												"parameters": {
+													"ContainerName": "nyc-taxi-project",
+													"FolderName": "bronze/trip2023data",
+													"FileName": " "
+												}
+											}
+										]
+									}
+								]
+							}
+						}
+					]
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2025-02-02T20:30:28Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
