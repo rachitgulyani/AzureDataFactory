@@ -22,6 +22,10 @@
 		"FileCreationTrigger_properties_typeProperties_scope": {
 			"type": "string",
 			"defaultValue": "/subscriptions/64885e05-1c68-4073-9065-a3dedd19eb57/resourceGroups/my-resource-group/providers/Microsoft.Storage/storageAccounts/mystorageaccountrachit"
+		},
+		"newTrigger_properties_typeProperties_scope": {
+			"type": "string",
+			"defaultValue": "/subscriptions/64885e05-1c68-4073-9065-a3dedd19eb57/resourceGroups/my-resource-group/providers/Microsoft.Storage/storageAccounts/mystorageaccountrachit"
 		}
 	},
 	"variables": {
@@ -358,6 +362,97 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/EmailPipe')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Execute Pipeline1",
+						"type": "ExecutePipeline",
+						"dependsOn": [],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "PipelineTutorial",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "SuccessNotification",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "Execute Pipeline1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"method": "POST",
+							"headers": {},
+							"url": "https://prod-18.northcentralus.logic.azure.com:443/workflows/b8fc80b7f03c409ea0d4a2561dfe8b08/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=YfK8XbCGkk-vAzqAwCpJe95ZN2DuJrjIK9qotg-68Jk",
+							"body": {
+								"value": "{\n\"title\":\"Pipeline run finish\",\n\"message\":\"Demo pipeline running successfully\",\n\"color\":\"Green\",\n\"dataFactoryName\":\"@{pipeline().DataFactory}\",\n\"pipelineName\":\"@{pipeline().Pipeline}\",\n\"pipelineRunld\":\"@{pipeline().RunId}\",\n\"time\":\"@{utcNow()}\"\n}",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "FailureNotification",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "Execute Pipeline1",
+								"dependencyConditions": [
+									"Failed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"method": "POST",
+							"headers": {},
+							"url": "https://prod-18.northcentralus.logic.azure.com:443/workflows/b8fc80b7f03c409ea0d4a2561dfe8b08/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=YfK8XbCGkk-vAzqAwCpJe95ZN2DuJrjIK9qotg-68Jk",
+							"body": {
+								"value": "{\n\"title\":\"Pipeline run failed!\",\n\"message\":\"@{activity('Execute Pipeline1').error.message}\",\n\"color\":\"Red\",\n\"dataFactoryName\":\"@{pipeline().DataFactory}\",\n\"pipelineName\":\"@{pipeline().Pipeline}\",\n\"pipelineRunld\":\"@{pipeline().RunId}\",\n\"time\":\"@{utcNow()}\"\n}",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/PipelineTutorial')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/EventBasedPipe')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
@@ -512,7 +607,7 @@
 						"type": "ForEach",
 						"dependsOn": [
 							{
-								"activity": "GetFileNames",
+								"activity": "FilterFilesOnly",
 								"dependencyConditions": [
 									"Succeeded"
 								]
@@ -521,7 +616,7 @@
 						"userProperties": [],
 						"typeProperties": {
 							"items": {
-								"value": "@activity('GetFileNames').output.childItems",
+								"value": "@activity('FilterFilesOnly').output.value",
 								"type": "Expression"
 							},
 							"activities": [
@@ -613,6 +708,29 @@
 									}
 								}
 							]
+						}
+					},
+					{
+						"name": "FilterFilesOnly",
+						"type": "Filter",
+						"dependsOn": [
+							{
+								"activity": "GetFileNames",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('GetFileNames').output.childItems",
+								"type": "Expression"
+							},
+							"condition": {
+								"value": "@equals(item().type,'File')",
+								"type": "Expression"
+							}
 						}
 					}
 				],
@@ -1423,6 +1541,7 @@
 						}
 					},
 					"columnDelimiter": ",",
+					"rowDelimiter": "\n",
 					"escapeChar": "\\",
 					"firstRowAsHeader": true,
 					"quoteChar": "\""
@@ -1513,6 +1632,76 @@
 				}
 			},
 			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/FileCreationTrigger')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Started",
+				"pipelines": [
+					{
+						"pipelineReference": {
+							"referenceName": "VarPipeline",
+							"type": "PipelineReference"
+						},
+						"parameters": {}
+					},
+					{
+						"pipelineReference": {
+							"referenceName": "EventBasedPipe",
+							"type": "PipelineReference"
+						},
+						"parameters": {}
+					}
+				],
+				"type": "BlobEventsTrigger",
+				"typeProperties": {
+					"blobPathBeginsWith": "/destination/blobs/data-factory-course/FactSales1.csv",
+					"ignoreEmptyBlobs": true,
+					"scope": "[parameters('FileCreationTrigger_properties_typeProperties_scope')]",
+					"events": [
+						"Microsoft.Storage.BlobDeleted",
+						"Microsoft.Storage.BlobCreated"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/VarPipeline')]",
+				"[concat(variables('factoryId'), '/pipelines/EventBasedPipe')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/newTrigger')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Started",
+				"pipelines": [
+					{
+						"pipelineReference": {
+							"referenceName": "EventBasedPipe",
+							"type": "PipelineReference"
+						},
+						"parameters": {}
+					}
+				],
+				"type": "BlobEventsTrigger",
+				"typeProperties": {
+					"blobPathBeginsWith": "/destination/blobs/data-factory-course/FactSales1.csv",
+					"ignoreEmptyBlobs": true,
+					"scope": "[parameters('newTrigger_properties_typeProperties_scope')]",
+					"events": [
+						"Microsoft.Storage.BlobCreated",
+						"Microsoft.Storage.BlobDeleted"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/EventBasedPipe')]"
+			]
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/DataFlow')]",
@@ -1641,45 +1830,6 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/datasets/csv_ds')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/FileCreationTrigger')]",
-			"type": "Microsoft.DataFactory/factories/triggers",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"runtimeState": "Started",
-				"pipelines": [
-					{
-						"pipelineReference": {
-							"referenceName": "VarPipeline",
-							"type": "PipelineReference"
-						},
-						"parameters": {}
-					},
-					{
-						"pipelineReference": {
-							"referenceName": "EventBasedPipe",
-							"type": "PipelineReference"
-						},
-						"parameters": {}
-					}
-				],
-				"type": "BlobEventsTrigger",
-				"typeProperties": {
-					"blobPathBeginsWith": "/destination/blobs/data-factory-course/FactSales1.csv",
-					"ignoreEmptyBlobs": true,
-					"scope": "[parameters('FileCreationTrigger_properties_typeProperties_scope')]",
-					"events": [
-						"Microsoft.Storage.BlobDeleted",
-						"Microsoft.Storage.BlobCreated"
-					]
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/pipelines/VarPipeline')]",
-				"[concat(variables('factoryId'), '/pipelines/EventBasedPipe')]"
 			]
 		}
 	]
